@@ -18,8 +18,12 @@ public class KeycloakAdminControllerImpl implements KeycloakAdminController {
     }
 
     @PostMapping("client")
-    public ResponseEntity<Void> criarClientCredentials(@PathVariable(name = "realm") String realm, KeycloakClientModelDto keycloakClientModelDto) {
-        System.out.println(realm);
+    public ResponseEntity<Void> criarClientCredentials(@PathVariable(name = "realm") String realm, @RequestBody KeycloakClientModelDto keycloakClientModelDto) {
+        try {
+            keycloakAdminServices.criarClientCredentials(realm, keycloakClientModelDto);
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
+        }
         return ResponseEntity.ok().build();
     }
 
@@ -34,7 +38,7 @@ public class KeycloakAdminControllerImpl implements KeycloakAdminController {
     }
 
     @PostMapping("/role")
-    public ResponseEntity<Void> criarRealmRole(@PathVariable(name = "realm") String realm,KeycloakRealmRoleModelDto keycloakRealmRoleModelDto) {
+    public ResponseEntity<Void> criarRealmRole(@PathVariable(name = "realm") String realm, @RequestBody KeycloakRealmRoleModelDto keycloakRealmRoleModelDto) {
         try {
             keycloakAdminServices.criarRealmRole(realm, keycloakRealmRoleModelDto);
             return ResponseEntity.ok().build();
@@ -44,7 +48,7 @@ public class KeycloakAdminControllerImpl implements KeycloakAdminController {
     }
 
     @GetMapping("/role/{nomeRole}")
-    public ResponseEntity buscaRealmRole(@PathVariable(name = "realm") String realm, @PathVariable(name = "nomeRole") String nomeRole) {
+    public ResponseEntity<KeycloakRealmRoleModelDto> buscaRealmRole(@PathVariable(name = "realm") String realm, @PathVariable(name = "nomeRole") String nomeRole) {
         try {
             KeycloakRealmRoleModelDto keycloakRealmRoleModelDto = keycloakAdminServices.buscaRealmRole(realm, nomeRole);
             return ResponseEntity.ok(keycloakRealmRoleModelDto);
