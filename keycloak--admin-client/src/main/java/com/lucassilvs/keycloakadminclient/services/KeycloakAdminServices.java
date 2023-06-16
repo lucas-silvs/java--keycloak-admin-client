@@ -13,4 +13,6 @@ public interface KeycloakAdminServices {
     void criarRealmRole(String realm, KeycloakRealmRoleModelDto keycloakRealmRoleModelDto);
 
     KeycloakRealmRoleModelDto buscaRealmRole(String realm, String nomeRole);
+
+    void atribuiRealmRoleAoClient(String realm, String clientId, String nomeRole);
 }

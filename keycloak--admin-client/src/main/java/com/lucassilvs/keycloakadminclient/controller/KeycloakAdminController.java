@@ -16,4 +16,6 @@ public interface KeycloakAdminController {
 
     ResponseEntity<KeycloakRealmRoleModelDto> buscaRealmRole(String realm, String nomeRole);
 
+    ResponseEntity<Void> atribuiRealmRoleAoClient(String realm, String clientId, String nomeRole);
+
 }

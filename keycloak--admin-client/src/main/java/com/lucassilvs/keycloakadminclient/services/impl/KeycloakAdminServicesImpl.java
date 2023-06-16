@@ -4,9 +4,11 @@ import com.lucassilvs.keycloakadminclient.controller.dto.KeycloakClientModelDto;
 import com.lucassilvs.keycloakadminclient.controller.dto.KeycloakRealmRoleModelDto;
 import com.lucassilvs.keycloakadminclient.services.KeycloakAdminServices;
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -76,6 +78,23 @@ public class KeycloakAdminServicesImpl implements KeycloakAdminServices {
 
         throw new RuntimeException("Client não encontrado");
     }
+
+    public void atribuiRealmRoleAoClient(String realm, String clientId, String nomeRole) {
+
+        ClientResource clientResource = keycloakClient.realm(realm).clients().get(clientId);
+
+
+        UserRepresentation serviceAccountUser = clientResource.getServiceAccountUser();
+
+        serviceAccountUser.setRealmRoles(List.of(nomeRole));
+
+        keycloakClient.realm(realm).users().create(serviceAccountUser);
+
+//        RoleRepresentation role = keycloakClient.realm(realm).roles().get(nomeRole).toRepresentation();
+
+
+    }
+
 
     @Override
     public void criarRealmRole(String realm, KeycloakRealmRoleModelDto keycloakRealmRoleModelDto) {
