@@ -65,16 +65,18 @@ public class KeycloakAdminServicesImpl implements KeycloakAdminServices {
 
     public void atribuiRealmRoleAoClient(String realm, String clientId, String nomeRole) {
 
-        ClientResource clientResource = keycloakClient.realm(realm).clients().get(clientId);
+        ClientRepresentation clientRepresentation = keycloakClient.realm(realm).clients().findByClientId(clientId).get(0);
 
+        //  obtenha o service account user do client
+
+        ClientResource clientResource = keycloakClient.realm(realm).clients().get(clientRepresentation.getId());
 
         UserRepresentation serviceAccountUser = clientResource.getServiceAccountUser();
 
-        serviceAccountUser.setRealmRoles(List.of(nomeRole));
+        // busca realm role pelo nome
+        RoleRepresentation realmRole = keycloakClient.realm(realm).roles().get(nomeRole).toRepresentation();
 
-        keycloakClient.realm(realm).users().create(serviceAccountUser);
-
-//        RoleRepresentation role = keycloakClient.realm(realm).roles().get(nomeRole).toRepresentation();
+        keycloakClient.realm(realm).users().get(serviceAccountUser.getId()).roles().realmLevel().add(List.of(realmRole));
 
 
     }
