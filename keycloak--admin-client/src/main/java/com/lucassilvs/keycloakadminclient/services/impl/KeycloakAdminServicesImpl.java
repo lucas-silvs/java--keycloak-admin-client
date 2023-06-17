@@ -39,22 +39,6 @@ public class KeycloakAdminServicesImpl implements KeycloakAdminServices {
         clientRepresentation.setServiceAccountsEnabled(true);
         clientRepresentation.setClientAuthenticatorType("client-secret");
 
-        ProtocolMapperRepresentation protocolMapperRepresentation = new ProtocolMapperRepresentation();
-        protocolMapperRepresentation.setName("subdominio mapper");
-        protocolMapperRepresentation.setProtocol("openid-connect");
-        protocolMapperRepresentation.setProtocolMapper("oidc-usermodel-realm-role-mapper");
-
-        HashMap<String, String> config = new HashMap<>();
-        config.put("id.token.claim", "true");
-        config.put("access.token.claim", "true");
-        config.put("claim.name", "subdomain");
-        config.put("multivalued", "true");
-        config.put("userinfo.token.claim", "true");
-        protocolMapperRepresentation.setConfig(config);
-
-        clientRepresentation.setProtocolMappers(List.of(protocolMapperRepresentation));
-
-
         Response response = keycloakClient.realm(realm).clients().create(clientRepresentation);
 
         if (response.getStatus() != 201) {
