@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import javax.ws.rs.core.Response;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,9 +47,6 @@ public class KeycloakAdminServicesImpl implements KeycloakAdminServices {
         }
 
         logger.info("Client credentials criado com sucesso");
-
-
-
     }
 
     @Override
@@ -56,8 +54,24 @@ public class KeycloakAdminServicesImpl implements KeycloakAdminServices {
 
         ClientRepresentation client = keycloakClient.realm(realm).clients().findByClientId(clientId).get(0);
 
+        ClientResource clientResource = keycloakClient.realm(realm).clients().get(client.getId());
+
+        UserRepresentation serviceAccountUser = clientResource.getServiceAccountUser();
+
+        List<KeycloakRealmRoleModelDto> listrolesDTO = new ArrayList<>();
+
+
+        keycloakClient.realm(realm).users().get(serviceAccountUser.getId()).roles().getAll().getRealmMappings().forEach(roles -> {
+            List attributes = keycloakClient.realm(realm).roles().get(roles.getName()).toRepresentation().getAttributes().get("poolId");
+
+            String poolId = attributes != null ? attributes.get(0).toString() : null;
+
+            KeycloakRealmRoleModelDto roleDTO = new KeycloakRealmRoleModelDto(roles.getName(), roles.getDescription(), poolId );
+            listrolesDTO.add(roleDTO);
+        });
+
         if (client != null) {
-            return new KeycloakClientModelDto(client.getClientId(), client.getSecret());
+            return new KeycloakClientModelDto(client.getClientId(), client.getSecret(), listrolesDTO);
         }
 
         throw new RuntimeException("Client não encontrado");
@@ -68,17 +82,15 @@ public class KeycloakAdminServicesImpl implements KeycloakAdminServices {
         ClientRepresentation clientRepresentation = keycloakClient.realm(realm).clients().findByClientId(clientId).get(0);
 
         //  obtenha o service account user do client
-
         ClientResource clientResource = keycloakClient.realm(realm).clients().get(clientRepresentation.getId());
 
         UserRepresentation serviceAccountUser = clientResource.getServiceAccountUser();
-
         // busca realm role pelo nome
         RoleRepresentation realmRole = keycloakClient.realm(realm).roles().get(nomeRole).toRepresentation();
 
         keycloakClient.realm(realm).users().get(serviceAccountUser.getId()).roles().realmLevel().add(List.of(realmRole));
 
-
+        logger.info(String.format("Realm role %s atribuida com sucesso", nomeRole));
     }
 
 
