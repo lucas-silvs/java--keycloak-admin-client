@@ -6,13 +6,15 @@ import com.lucassilvs.keycloakadminclient.services.KeycloakAdminServices;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
+import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
+import software.amazon.awssdk.services.secretsmanager.model.CreateSecretRequest;
 
 import javax.ws.rs.core.Response;
 import java.util.ArrayList;
@@ -20,24 +22,45 @@ import java.util.List;
 import java.util.Map;
 
 @Service
-@Profile("local")
-public class KeycloakAdminServicesImpl implements KeycloakAdminServices {
+@Profile("localstack")
+public class KeycloakAdminServicesAwsImpl implements KeycloakAdminServices {
 
 
     private final Keycloak keycloakClient;
 
+    private SecretsManagerClient secretsManagerClient;
 
 
-    public KeycloakAdminServicesImpl(Keycloak keycloakClient) {
+    @Autowired
+    public KeycloakAdminServicesAwsImpl(Keycloak keycloakClient, SecretsManagerClient secretsManagerClient) {
         this.keycloakClient = keycloakClient;
+        this.secretsManagerClient = secretsManagerClient;
     }
 
-    private static final Logger logger = LoggerFactory.getLogger(KeycloakAdminServicesImpl.class);
+    private static final Logger logger = LoggerFactory.getLogger(KeycloakAdminServicesAwsImpl.class);
 
 
     @Override
     public void criarClientCredentials(String realm, KeycloakClientModelDto keycloakClientModelDto) {
 
+        ClientRepresentation clientRepresentation = createClientCredentialKeycloak(realm, keycloakClientModelDto);
+
+        String credentialToString = "{ " +
+                "\"client-id\": \"" + keycloakClientModelDto.getClientId() +
+                "\", \"client-secret\": \"" + clientRepresentation.getSecret() +
+                "\" }";
+
+        CreateSecretRequest secretRequest = CreateSecretRequest.builder()
+                .name("keycloak/" + realm + "/" + keycloakClientModelDto.getClientId())
+                .secretString(credentialToString)
+                .build();
+
+        secretsManagerClient.createSecret(secretRequest);
+
+        logger.info("Client credentials criado com sucesso");
+    }
+
+    private ClientRepresentation createClientCredentialKeycloak(String realm, KeycloakClientModelDto keycloakClientModelDto) {
         ClientRepresentation clientRepresentation = new ClientRepresentation();
         clientRepresentation.setClientId(keycloakClientModelDto.getClientId());
         clientRepresentation.setServiceAccountsEnabled(true);
@@ -49,7 +72,9 @@ public class KeycloakAdminServicesImpl implements KeycloakAdminServices {
             throw new RuntimeException("Erro ao criar client credentials");
         }
 
-        logger.info("Client credentials criado com sucesso");
+        clientRepresentation = keycloakClient.realm(realm).clients().findByClientId(keycloakClientModelDto.getClientId()).get(0);
+
+        return clientRepresentation;
     }
 
     @Override

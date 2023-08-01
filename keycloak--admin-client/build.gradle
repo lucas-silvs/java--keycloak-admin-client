@@ -31,6 +31,10 @@ dependencies {
     //Zalando logbook
     implementation 'org.zalando:logbook-spring-boot-starter:3.0.0'
 
+    // AWS Secret Manager
+    implementation 'software.amazon.awssdk:secretsmanager:2.20.114'
+    implementation 'com.google.code.gson:gson:2.10.1'
+
 
 }
 

@@ -7,12 +7,14 @@ import java.util.List;
 public class KeycloakClientModelDto {
 
     @Nonnull
-    private final String clientId;
+    private  String clientId;
 
-    private final String clientSecret;
+    private  String clientSecret;
 
     private List<KeycloakRealmRoleModelDto> realmRoles;
 
+    public KeycloakClientModelDto() {
+    }
 
     public KeycloakClientModelDto(String clientId, String clientSecret, List<KeycloakRealmRoleModelDto> realmRoles) {
         this.clientId = clientId;
