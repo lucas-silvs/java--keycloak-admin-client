@@ -2,15 +2,21 @@
 server:
     port: 5000
 
-keycloak:
-  serverUrl: ${SERVER_URL}
-  realm: ${REALM}
-  clientId: ${CLIENT_ID}
-  clientSecret: ${CLIENT_SECRET}
-  username: ${USERNAME}
-  password: ${PASSWORD}
-  grantType: ${GRANT_TYPE}
-
 spring:
   jackson:
     default-property-inclusion: non_null
+
+management:
+  health:
+    db:
+      enabled: true
+  endpoint:
+    health:
+      show-details: always
+  endpoints:
+    jmx:
+      exposure:
+        include: health
+
+logging.level:
+  org.zalando.logbook: trace

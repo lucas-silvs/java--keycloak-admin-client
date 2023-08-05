@@ -31,7 +31,7 @@ public class KeycloakAdminControllerImpl implements KeycloakAdminController {
         return ResponseEntity.ok(keycloakClientModelDto);
     }
 
-    @PostMapping("/client/{clientId}/role/{nomeRole}")
+    @PutMapping("/client/{clientId}/role/{nomeRole}")
     public ResponseEntity<Void> atribuiRealmRoleAoClient(@PathVariable(name = "realm") String realm, @PathVariable(name = "clientId") String clientId, @PathVariable(name = "nomeRole")String nomeRole) {
         keycloakAdminServices.atribuiRealmRoleAoClient(realm, clientId, nomeRole);
         return ResponseEntity.ok().build();
