@@ -12,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 import software.amazon.awssdk.services.secretsmanager.model.CreateSecretRequest;
+import software.amazon.awssdk.services.secretsmanager.model.ResourceExistsException;
 
 @Service
 @Profile("localstack")
@@ -39,13 +40,19 @@ public class KeycloakAdminServicesAwsImpl extends KeycloakAdminServicesImpl impl
     }
 
     private void createSecret(String realm, KeycloakClientModelDto keycloakClientModelDto, ClientRepresentation clientRepresentation) {
+        String newSecretName = String.format(SECRET_NAME, realm, keycloakClientModelDto.clientId());
         CreateSecretRequest secretRequest = CreateSecretRequest.builder()
-                .name(String.format(SECRET_NAME, realm, keycloakClientModelDto.clientId()))
+                .name(newSecretName)
                 .secretString(String.format(CREDENTIAL_SECRET_VALUE, keycloakClientModelDto.clientId(), clientRepresentation.getSecret()))
                 .build();
         try {
             secretsManagerClient.createSecret(secretRequest);
-        } catch (Exception e) {
+
+        } catch (ResourceExistsException e) {
+            logger.error("Erro ao criar secret no Secrets Manager", e);
+            throw new DomainException(String.format("Secret com nome %s já existe no Secrets Manager", newSecretName), HttpStatus.CONFLICT);
+        }
+        catch (Exception e) {
             logger.error("Erro ao criar secret no Secrets Manager", e);
             throw new DomainException(String.format("Erro ao criar secret no Secrets Manager: %s", e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
         }
