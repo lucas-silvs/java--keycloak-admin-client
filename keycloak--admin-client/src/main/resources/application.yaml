@@ -10,3 +10,7 @@ keycloak:
   username: ${USERNAME}
   password: ${PASSWORD}
   grantType: ${GRANT_TYPE}
+
+spring:
+  jackson:
+    default-property-inclusion: non_null
