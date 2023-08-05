@@ -90,7 +90,7 @@ public class KeycloakAdminServicesImpl implements KeycloakAdminServices {
         });
 
         keycloakClient.close();
-        return new KeycloakClientModelDto(client.getClientId(), client.getSecret(), listrolesDTO);
+        return new KeycloakClientModelDto(client.getClientId(), client.getSecret(), listrolesDTO, null);
     }
 
     public void atribuiRealmRoleAoClient(String realm, String clientId, String nomeRole) {
