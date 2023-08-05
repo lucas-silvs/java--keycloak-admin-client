@@ -19,19 +19,26 @@ dependencies {
 
     annotationProcessor "org.springframework.boot:spring-boot-configuration-processor"
 
-
-
     implementation 'org.springframework.boot:spring-boot-starter-web'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    //Zalando logbook
+    implementation 'org.zalando:logbook-spring-boot-starter:3.3.0'
+
+    runtimeOnly 'com.h2database:h2'
+    implementation 'com.mysql:mysql-connector-j:8.1.0'
 
     //lib keycloak admin client
-    implementation 'org.keycloak:keycloak-admin-client:20.0.3'
+    implementation 'org.keycloak:keycloak-admin-client:22.0.1'
 
-    //Zalando logbook
-    implementation 'org.zalando:logbook-spring-boot-starter:3.0.0'
+    // AWS Secret Manager
+    implementation 'software.amazon.awssdk:secretsmanager:2.20.114'
+    implementation 'com.google.code.gson:gson:2.10.1'
+    implementation 'software.amazon.awssdk:iam:2.20.119'
 
-
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
 
 tasks.named('test') {
