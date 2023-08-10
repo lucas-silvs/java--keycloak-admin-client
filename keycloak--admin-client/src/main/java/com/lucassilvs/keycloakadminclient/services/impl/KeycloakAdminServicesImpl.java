@@ -2,6 +2,7 @@ package com.lucassilvs.keycloakadminclient.services.impl;
 
 import com.lucassilvs.keycloakadminclient.configuration.exceptions.ApplicationException;
 import com.lucassilvs.keycloakadminclient.controller.mapper.ClientCredentialMapper;
+import com.lucassilvs.keycloakadminclient.controller.mapper.RealmRoleMapper;
 import com.lucassilvs.keycloakadminclient.datasource.entity.AdminClientCredentialEntity;
 import com.lucassilvs.keycloakadminclient.datasource.repository.RealmAdminClientRepository;
 import com.lucassilvs.keycloakadminclient.services.KeycloakAdminServices;
@@ -81,17 +82,16 @@ public class KeycloakAdminServicesImpl implements KeycloakAdminServices {
         ClientRepresentation client = getClientRepresentation(realm, clientId, keycloakClient);
         UserRepresentation serviceAccountUser = getServiceAccountClientCredential(realm, keycloakClient, client);
 
-        //TODO refatorar para utilizar Mapper do MapStruct
         List<RealmRole> listroles = new ArrayList<>();
-        keycloakClient.realm(realm).users().get(serviceAccountUser.getId()).roles().getAll().getRealmMappings().forEach(roles -> {
+        keycloakClient.realm(realm).users().get(serviceAccountUser.getId()).roles().getAll().getRealmMappings().forEach(role -> {
             // mapear cada atributo do realm role
-            Map<String,List<String>> attributes = keycloakClient.realm(realm).roles().get(roles.getName()).toRepresentation().getAttributes();
-            RealmRole role = new RealmRole(roles.getName(), roles.getDescription(), attributes);
-            listroles.add(role);
+            Map<String,List<String>> attributes = keycloakClient.realm(realm).roles().get(role.getName()).toRepresentation().getAttributes();
+            RealmRole realmRole = RealmRoleMapper.INSTANCE.map(role, attributes);
+            listroles.add(realmRole);
         });
-
         keycloakClient.close();
-        return new ClientCredential(client.getClientId(), client.getSecret(), listroles, null);
+
+        return ClientCredentialMapper.INSTANCE.map(client, listroles);
     }
 
     public void atribuiRealmRoleAoClient(String realm, String clientId, String nomeRole) {
@@ -143,9 +143,11 @@ public class KeycloakAdminServicesImpl implements KeycloakAdminServices {
 
         Keycloak keycloakClient = getKeycloakClient(realm);
         RoleRepresentation realmRole = getRoleRepresentation(realm, nomeRole, keycloakClient);
+        Map<String,List<String>> attributes = keycloakClient.realm(realm).roles().get(realmRole.getName()).toRepresentation().getAttributes();
         keycloakClient.close();
 
-        return new RealmRole(realmRole.getName(), realmRole.getDescription(), realmRole.getAttributes());
+        return RealmRoleMapper.INSTANCE.map(realmRole, attributes);
+
     }
 
     private RoleRepresentation getRoleRepresentation(String realm, String nomeRole, Keycloak keycloakClient) {

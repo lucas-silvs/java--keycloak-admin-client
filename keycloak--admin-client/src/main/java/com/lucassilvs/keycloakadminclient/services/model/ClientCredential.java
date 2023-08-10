@@ -6,9 +6,7 @@ public record ClientCredential (
 
         String clientId,
         String clientSecret,
-
         List<RealmRole> realmRoles,
-
         String roleIamName
 
 ) {

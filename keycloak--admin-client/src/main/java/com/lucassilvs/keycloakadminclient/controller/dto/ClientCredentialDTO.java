@@ -8,7 +8,7 @@ public record ClientCredentialDTO(
         @NotBlank String clientId,
         String clientSecret,
         List<RealmRoleDTO> realmRoles,
-        String roleIAMName
+        String roleIamName
 ) {}
 
 
