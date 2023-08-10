@@ -1,18 +1,18 @@
 package com.lucassilvs.keycloakadminclient.services;
 
-import com.lucassilvs.keycloakadminclient.controller.dto.KeycloakClientModelDto;
-import com.lucassilvs.keycloakadminclient.controller.dto.KeycloakRealmRoleModelDto;
+import com.lucassilvs.keycloakadminclient.services.model.ClientCredential;
+import com.lucassilvs.keycloakadminclient.services.model.RealmRole;
 
 
 public interface KeycloakAdminServices {
 
-    void criarClientCredentials(String realm, KeycloakClientModelDto keycloakClientModelDto);
+    void criarClientCredentials(String realm, ClientCredential clientCredential);
 
-    KeycloakClientModelDto buscarClientCredentials(String realm, String clientId);
+    ClientCredential buscarClientCredentials(String realm, String clientId);
 
-    void criarRealmRole(String realm, KeycloakRealmRoleModelDto keycloakRealmRoleModelDto);
+    void criarRealmRole(String realm, RealmRole keycloakRealmRoleModelDto);
 
-    KeycloakRealmRoleModelDto buscaRealmRole(String realm, String nomeRole);
+    RealmRole buscaRealmRole(String realm, String nomeRole);
 
     void atribuiRealmRoleAoClient(String realm, String clientId, String nomeRole);
 }

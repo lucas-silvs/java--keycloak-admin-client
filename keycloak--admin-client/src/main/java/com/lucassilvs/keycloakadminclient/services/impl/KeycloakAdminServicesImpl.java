@@ -1,11 +1,12 @@
 package com.lucassilvs.keycloakadminclient.services.impl;
 
 import com.lucassilvs.keycloakadminclient.configuration.exceptions.ApplicationException;
-import com.lucassilvs.keycloakadminclient.controller.dto.KeycloakClientModelDto;
-import com.lucassilvs.keycloakadminclient.controller.dto.KeycloakRealmRoleModelDto;
-import com.lucassilvs.keycloakadminclient.datasource.entity.RealmAdminClientEntity;
+import com.lucassilvs.keycloakadminclient.controller.mapper.ClientCredentialMapper;
+import com.lucassilvs.keycloakadminclient.datasource.entity.AdminClientCredentialEntity;
 import com.lucassilvs.keycloakadminclient.datasource.repository.RealmAdminClientRepository;
 import com.lucassilvs.keycloakadminclient.services.KeycloakAdminServices;
+import com.lucassilvs.keycloakadminclient.services.model.ClientCredential;
+import com.lucassilvs.keycloakadminclient.services.model.RealmRole;
 import jakarta.ws.rs.ClientErrorException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
@@ -32,6 +33,10 @@ import java.util.Optional;
 public class KeycloakAdminServicesImpl implements KeycloakAdminServices {
 
     private final RealmAdminClientRepository realmAdminClientRepository;
+
+    private final ClientCredentialMapper  clientCredentialMapper = ClientCredentialMapper.INSTANCE;
+
+
     private static final Logger logger = LoggerFactory.getLogger(KeycloakAdminServicesImpl.class);
 
     @Autowired
@@ -39,17 +44,16 @@ public class KeycloakAdminServicesImpl implements KeycloakAdminServices {
         this.realmAdminClientRepository = realmAdminClientRepository;
     }
 
-    @Override
-    public void criarClientCredentials(String realm, KeycloakClientModelDto keycloakClientModelDto) {
-        createClientCredentialKeycloak(realm, keycloakClientModelDto);
+    public void criarClientCredentials(String realm, ClientCredential clientCredential) {
+        createClientCredentialKeycloak(realm, clientCredential);
     }
 
-    protected ClientRepresentation createClientCredentialKeycloak(String realm, KeycloakClientModelDto keycloakClientModelDto) {
+    protected ClientRepresentation createClientCredentialKeycloak(String realm, ClientCredential clientCredential) {
 
         Keycloak keycloakClient = getKeycloakClient(realm);
 
         ClientRepresentation clientRepresentation = new ClientRepresentation();
-        clientRepresentation.setClientId(keycloakClientModelDto.clientId());
+        clientRepresentation.setClientId(clientCredential.clientId());
         clientRepresentation.setServiceAccountsEnabled(true);
         clientRepresentation.setClientAuthenticatorType("client-secret");
 
@@ -58,35 +62,36 @@ public class KeycloakAdminServicesImpl implements KeycloakAdminServices {
         switch (response.getStatus()) {
             case 201 -> logger.info("Client credentials criado com sucesso");
             case 409 ->
-                    throw new ApplicationException(String.format("client credentials %s já existe", keycloakClientModelDto.clientId()), HttpStatus.CONFLICT);
+                    throw new ApplicationException(String.format("client credentials %s já existe", clientCredential.clientId()), HttpStatus.CONFLICT);
             default ->
                     throw new ApplicationException(String.format("Erro ao criar client credentials, recebido seguinte status: %s", response.getStatus()), HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
-        clientRepresentation = keycloakClient.realm(realm).clients().findByClientId(keycloakClientModelDto.clientId()).get(0);
+        clientRepresentation = keycloakClient.realm(realm).clients().findByClientId(clientCredential.clientId()).get(0);
 
         keycloakClient.close();
         return clientRepresentation;
     }
 
     @Override
-    public KeycloakClientModelDto buscarClientCredentials(String realm, String clientId) {
+    public ClientCredential buscarClientCredentials(String realm, String clientId) {
 
         Keycloak keycloakClient = getKeycloakClient(realm);
 
         ClientRepresentation client = getClientRepresentation(realm, clientId, keycloakClient);
         UserRepresentation serviceAccountUser = getServiceAccountClientCredential(realm, keycloakClient, client);
 
-        List<KeycloakRealmRoleModelDto> listrolesDTO = new ArrayList<>();
+        //TODO refatorar para utilizar Mapper do MapStruct
+        List<RealmRole> listroles = new ArrayList<>();
         keycloakClient.realm(realm).users().get(serviceAccountUser.getId()).roles().getAll().getRealmMappings().forEach(roles -> {
-            List<String> attributes = keycloakClient.realm(realm).roles().get(roles.getName()).toRepresentation().getAttributes().get("poolId");
-            String poolId = attributes != null ? attributes.get(0) : null;
-            KeycloakRealmRoleModelDto roleDTO = new KeycloakRealmRoleModelDto(roles.getName(), roles.getDescription(), poolId );
-            listrolesDTO.add(roleDTO);
+            // mapear cada atributo do realm role
+            Map<String,List<String>> attributes = keycloakClient.realm(realm).roles().get(roles.getName()).toRepresentation().getAttributes();
+            RealmRole role = new RealmRole(roles.getName(), roles.getDescription(), attributes);
+            listroles.add(role);
         });
 
         keycloakClient.close();
-        return new KeycloakClientModelDto(client.getClientId(), client.getSecret(), listrolesDTO, null);
+        return new ClientCredential(client.getClientId(), client.getSecret(), listroles, null);
     }
 
     public void atribuiRealmRoleAoClient(String realm, String clientId, String nomeRole) {
@@ -114,33 +119,33 @@ public class KeycloakAdminServicesImpl implements KeycloakAdminServices {
 
 
     @Override
-    public void criarRealmRole(String realm, KeycloakRealmRoleModelDto keycloakRealmRoleModelDto) {
+    public void criarRealmRole(String realm, RealmRole realmRole) {
         Keycloak keycloakClient = getKeycloakClient(realm);
 
-        RoleRepresentation realmRole = new RoleRepresentation();
-        realmRole.setName(keycloakRealmRoleModelDto.nomeRole());
-        realmRole.setDescription(keycloakRealmRoleModelDto.descricaoRole());
-        realmRole.setAttributes(Map.of("poolId", List.of(keycloakRealmRoleModelDto.poolId())));
+        RoleRepresentation realmRoleData = new RoleRepresentation();
+        realmRoleData.setName(realmRole.nome());
+        realmRoleData.setDescription(realmRole.descricao());
+        realmRoleData.setAttributes(realmRole.atributos());
 
         try {
-            keycloakClient.realm(realm).roles().create(realmRole);
+            keycloakClient.realm(realm).roles().create(realmRoleData);
         }catch (ClientErrorException e){
-            throw new ApplicationException(String.format("Realm role %s já existe", keycloakRealmRoleModelDto.nomeRole()), HttpStatus.CONFLICT);
+            throw new ApplicationException(String.format("Realm role %s já existe", realmRole.nome()), HttpStatus.CONFLICT);
         }catch (Exception e) {
-            throw new ApplicationException(String.format("Erro ao criar realm role %s", keycloakRealmRoleModelDto.nomeRole()), HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new ApplicationException(String.format("Erro ao criar realm role %s", realmRole.nome()), HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
         keycloakClient.close();
     }
 
     @Override
-    public KeycloakRealmRoleModelDto buscaRealmRole(String realm, String nomeRole) {
+    public RealmRole buscaRealmRole(String realm, String nomeRole) {
 
         Keycloak keycloakClient = getKeycloakClient(realm);
         RoleRepresentation realmRole = getRoleRepresentation(realm, nomeRole, keycloakClient);
         keycloakClient.close();
 
-        return new KeycloakRealmRoleModelDto(realmRole.getName(), realmRole.getDescription(), realmRole.getAttributes().get("poolId").get(0));
+        return new RealmRole(realmRole.getName(), realmRole.getDescription(), realmRole.getAttributes());
     }
 
     private RoleRepresentation getRoleRepresentation(String realm, String nomeRole, Keycloak keycloakClient) {
@@ -157,17 +162,17 @@ public class KeycloakAdminServicesImpl implements KeycloakAdminServices {
 
     protected Keycloak getKeycloakClient(String realm) {
 
-        Optional<RealmAdminClientEntity> entity = realmAdminClientRepository.findByRealm(realm);
+        Optional<AdminClientCredentialEntity> entity = realmAdminClientRepository.findByRealm(realm);
         if(entity.isEmpty()) {
             throw new ApplicationException(String.format("Realm %s não encontrado", realm), HttpStatus.NOT_FOUND);
         }
-        RealmAdminClientEntity realmAdminClientEntity = entity.get();
+        AdminClientCredentialEntity adminClientCredentialEntity = entity.get();
         return KeycloakBuilder.builder()
-                .clientId(realmAdminClientEntity.getClientId())
-                .clientSecret(realmAdminClientEntity.getClientSecret())
-                .grantType(realmAdminClientEntity.getGrantType())
-                .realm(realmAdminClientEntity.getRealm())
-                .serverUrl(realmAdminClientEntity.getServerUrl())
+                .clientId(adminClientCredentialEntity.getClientId())
+                .clientSecret(adminClientCredentialEntity.getClientSecret())
+                .grantType(adminClientCredentialEntity.getGrantType())
+                .realm(adminClientCredentialEntity.getRealm())
+                .serverUrl(adminClientCredentialEntity.getServerUrl())
                 .build();
     }
 

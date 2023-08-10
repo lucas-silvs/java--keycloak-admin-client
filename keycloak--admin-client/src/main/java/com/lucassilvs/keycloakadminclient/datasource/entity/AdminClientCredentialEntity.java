@@ -1,6 +1,6 @@
 package com.lucassilvs.keycloakadminclient.datasource.entity;
 
-import com.lucassilvs.keycloakadminclient.controller.dto.RealmAdminClientDTO;
+import com.lucassilvs.keycloakadminclient.services.model.AdminClientCredentials;
 import jakarta.persistence.*;
 import org.hibernate.annotations.UuidGenerator;
 
@@ -8,7 +8,7 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "realm_admin_client_credentials")
-public class RealmAdminClientEntity {
+public class AdminClientCredentialEntity {
 
     @Id
     @GeneratedValue(generator = "uuid2")
@@ -22,19 +22,19 @@ public class RealmAdminClientEntity {
     private String grantType;
     private String serverUrl;
 
-    public RealmAdminClientEntity() {
+    public AdminClientCredentialEntity() {
     }
 
-    public RealmAdminClientEntity(RealmAdminClientDTO keyclokaAdminClientDto) {
-        this.setRealm(keyclokaAdminClientDto.realm());
-        this.setClientId(keyclokaAdminClientDto.clientId());
-        this.setClientSecret(keyclokaAdminClientDto.clientSecret());
-        this.setGrantType(keyclokaAdminClientDto.grantType());
-        this.setServerUrl(keyclokaAdminClientDto.serverUrl());
+    public AdminClientCredentialEntity(AdminClientCredentials adminClientCredentials) {
+        this.setRealm(adminClientCredentials.realm());
+        this.setClientId(adminClientCredentials.clientId());
+        this.setClientSecret(adminClientCredentials.clientSecret());
+        this.setGrantType(adminClientCredentials.grantType());
+        this.setServerUrl(adminClientCredentials.serverUrl());
     }
 
 
-    public RealmAdminClientEntity(String realm, String clientId, String clientSecret, String grantType, String serverUrl) {
+    public AdminClientCredentialEntity(String realm, String clientId, String clientSecret, String grantType, String serverUrl) {
         this.realm = realm;
         this.clientId = clientId;
         this.clientSecret = clientSecret;
@@ -42,10 +42,11 @@ public class RealmAdminClientEntity {
         this.serverUrl = serverUrl;
     }
 
-    public RealmAdminClientDTO toRealmAdminClientDTO() {
-        return new RealmAdminClientDTO(
+    public AdminClientCredentials toAdminClientCredentials() {
+        return new AdminClientCredentials(
                 this.getRealm(),
                 this.getClientId(),
+                null,
                 this.getGrantType(),
                 this.getServerUrl()
         );

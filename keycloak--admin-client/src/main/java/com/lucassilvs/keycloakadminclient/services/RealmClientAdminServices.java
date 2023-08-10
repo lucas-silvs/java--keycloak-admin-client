@@ -1,14 +1,14 @@
 package com.lucassilvs.keycloakadminclient.services;
 
-import com.lucassilvs.keycloakadminclient.controller.dto.RealmAdminClientDTO;
+import com.lucassilvs.keycloakadminclient.services.model.AdminClientCredentials;
 
 import java.util.List;
 
 public interface RealmClientAdminServices {
 
-    void cadastrarRealmAdminClient(RealmAdminClientDTO keyclokaAdminClientDto);
+    void cadastrarRealmAdminClient(AdminClientCredentials keyclokaAdminClientDto);
 
-    RealmAdminClientDTO buscarRealmAdminClient(String realm);
+    AdminClientCredentials buscarRealmAdminClient(String realm);
 
-    List<RealmAdminClientDTO> listarRealmAdminClients();
+    List<AdminClientCredentials> listarRealmAdminClients();
 }

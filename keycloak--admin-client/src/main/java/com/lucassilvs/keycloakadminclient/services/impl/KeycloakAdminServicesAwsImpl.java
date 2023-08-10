@@ -2,8 +2,8 @@ package com.lucassilvs.keycloakadminclient.services.impl;
 
 import com.lucassilvs.keycloakadminclient.configuration.aws.role.AwsRoleIamClientComponent;
 import com.lucassilvs.keycloakadminclient.configuration.exceptions.DomainException;
-import com.lucassilvs.keycloakadminclient.controller.dto.KeycloakClientModelDto;
 import com.lucassilvs.keycloakadminclient.datasource.repository.RealmAdminClientRepository;
+import com.lucassilvs.keycloakadminclient.services.model.ClientCredential;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,19 +35,19 @@ public class KeycloakAdminServicesAwsImpl extends KeycloakAdminServicesImpl {
     }
 
     @Override
-    public void criarClientCredentials(String realm, KeycloakClientModelDto keycloakClientModelDto) {
-        String newSecretName = String.format(SECRET_NAME, realm, keycloakClientModelDto.clientId());
+    public void criarClientCredentials(String realm, ClientCredential clientCredential) {
+        String newSecretName = String.format(SECRET_NAME, realm, clientCredential.clientId());
 
-        ClientRepresentation clientRepresentation = createClientCredentialKeycloak(realm, keycloakClientModelDto);
-        CreateSecretResponse secretResponse = createSecret(newSecretName, keycloakClientModelDto, clientRepresentation);
-        roleIamClientComponent.addpolicySecretKeycloakCredentials(keycloakClientModelDto.roleName(), secretResponse.arn(), newSecretName);
+        ClientRepresentation clientRepresentation = createClientCredentialKeycloak(realm, clientCredential);
+        CreateSecretResponse secretResponse = createSecret(newSecretName, clientCredential, clientRepresentation);
+        roleIamClientComponent.addpolicySecretKeycloakCredentials(clientCredential.roleIamName(), secretResponse.arn(), newSecretName);
 
     }
 
-    private CreateSecretResponse createSecret(String newSecretName, KeycloakClientModelDto keycloakClientModelDto, ClientRepresentation clientRepresentation) {
+    private CreateSecretResponse createSecret(String newSecretName, ClientCredential clientCredential, ClientRepresentation clientRepresentation) {
         CreateSecretRequest secretRequest = CreateSecretRequest.builder()
                 .name(newSecretName)
-                .secretString(String.format(CREDENTIAL_SECRET_VALUE, keycloakClientModelDto.clientId(), clientRepresentation.getSecret()))
+                .secretString(String.format(CREDENTIAL_SECRET_VALUE, clientCredential.clientId(), clientRepresentation.getSecret()))
                 .build();
         try {
             return secretsManagerClient.createSecret(secretRequest);

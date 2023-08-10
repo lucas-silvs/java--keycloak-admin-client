@@ -2,10 +2,11 @@ package com.lucassilvs.keycloakadminclient.services.impl;
 
 import com.lucassilvs.keycloakadminclient.configuration.exceptions.ApplicationException;
 import com.lucassilvs.keycloakadminclient.configuration.exceptions.DomainException;
-import com.lucassilvs.keycloakadminclient.controller.dto.RealmAdminClientDTO;
-import com.lucassilvs.keycloakadminclient.datasource.entity.RealmAdminClientEntity;
+import com.lucassilvs.keycloakadminclient.controller.mapper.AdminClientCredentialEntityMapper;
+import com.lucassilvs.keycloakadminclient.datasource.entity.AdminClientCredentialEntity;
 import com.lucassilvs.keycloakadminclient.datasource.repository.RealmAdminClientRepository;
 import com.lucassilvs.keycloakadminclient.services.RealmClientAdminServices;
+import com.lucassilvs.keycloakadminclient.services.model.AdminClientCredentials;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -18,20 +19,22 @@ import java.util.stream.Collectors;
 public class RealmClientAdminServicesImpl implements RealmClientAdminServices {
     private final RealmAdminClientRepository realmAdminClientRepository;
 
+    private final AdminClientCredentialEntityMapper adminClientCredentialEntityMapper = AdminClientCredentialEntityMapper.INSTANCE;
+
     @Autowired
     public RealmClientAdminServicesImpl(RealmAdminClientRepository realmAdminClientRepository) {
         this.realmAdminClientRepository = realmAdminClientRepository;
     }
 
     @Override
-    public void cadastrarRealmAdminClient(RealmAdminClientDTO keyclokaAdminClientDto) {
+    public void cadastrarRealmAdminClient(AdminClientCredentials adminClientCredential) {
 
-        if (realmAdminClientRepository.existsByRealm(keyclokaAdminClientDto.realm()))
-            throw new ApplicationException(String.format("RealmAdminClient já cadastrado para o realm %s", keyclokaAdminClientDto.realm()), HttpStatus.CONFLICT);
+        if (realmAdminClientRepository.existsByRealm(adminClientCredential.realm()))
+            throw new ApplicationException(String.format("RealmAdminClient já cadastrado para o realm %s", adminClientCredential.realm()), HttpStatus.CONFLICT);
 
-        RealmAdminClientEntity realmAdminClientEntity = new RealmAdminClientEntity(keyclokaAdminClientDto);
+        AdminClientCredentialEntity adminClientCredentialEntity = adminClientCredentialEntityMapper.map(adminClientCredential);
         try {
-            realmAdminClientRepository.save(realmAdminClientEntity);
+            realmAdminClientRepository.save(adminClientCredentialEntity);
         }catch (Exception e) {
             throw new DomainException(String.format("Erro ao cadastrar RealmAdminClient: %s", e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -39,19 +42,19 @@ public class RealmClientAdminServicesImpl implements RealmClientAdminServices {
     }
 
     @Override
-    public RealmAdminClientDTO buscarRealmAdminClient(String realm) {
-        Optional<RealmAdminClientEntity> optionalRealmAdminClientEntity = realmAdminClientRepository.findByRealm(realm);
+    public AdminClientCredentials buscarRealmAdminClient(String realm) {
+        Optional<AdminClientCredentialEntity> optionalRealmAdminClientEntity = realmAdminClientRepository.findByRealm(realm);
 
-        return optionalRealmAdminClientEntity.orElseThrow( () -> new ApplicationException("RealmAdminClient não encontrado", HttpStatus.NOT_FOUND)).toRealmAdminClientDTO();
+        return adminClientCredentialEntityMapper.map(optionalRealmAdminClientEntity.orElseThrow( () -> new ApplicationException("RealmAdminClient não encontrado", HttpStatus.NOT_FOUND)));
     }
 
     @Override
-    public List<RealmAdminClientDTO> listarRealmAdminClients() {
-        List<RealmAdminClientEntity> listRealmAdminClientEntity = realmAdminClientRepository.findAll();
+    public List<AdminClientCredentials> listarRealmAdminClients() {
+        List<AdminClientCredentialEntity> listAdminClientCredentialEntity = realmAdminClientRepository.findAll();
 
-       return listRealmAdminClientEntity
+       return listAdminClientCredentialEntity
                 .stream()
-                .map(RealmAdminClientEntity::toRealmAdminClientDTO)
+                .map(adminClientCredentialEntityMapper::map)
                 .collect(Collectors.toList());
     }
 }
