@@ -6,7 +6,7 @@ import java.util.List;
 
 public interface RealmClientAdminPort {
 
-    void cadastrarRealmAdminClient(AdminClientCredential keyclokaAdminClientDto);
+    void cadastrarRealmAdminClient(AdminClientCredential adminClientCredential);
 
     AdminClientCredential buscarRealmAdminClient(String realm);
 

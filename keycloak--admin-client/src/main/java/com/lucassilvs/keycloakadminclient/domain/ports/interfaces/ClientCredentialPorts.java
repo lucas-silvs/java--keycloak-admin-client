@@ -10,7 +10,7 @@ public interface ClientCredentialPorts {
 
     ClientCredential buscarClientCredentials(String realm, String clientId);
 
-    void criarRealmRole(String realm, RealmRole keycloakRealmRoleModelDto);
+    void criarRealmRole(String realm, RealmRole realmRole);
 
     RealmRole buscaRealmRole(String realm, String nomeRole);
 
